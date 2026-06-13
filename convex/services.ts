@@ -122,6 +122,28 @@ export const createService = mutation({
   },
 });
 
+export const updateService = mutation({
+  args: {
+    id: v.id("services"),
+    name: v.string(),
+    agency: v.string(),
+    fee: v.string(),
+    processingTime: v.string(),
+    documents: v.array(v.string()),
+    eligibility: v.string(),
+    processSteps: v.array(v.string()),
+    locations: v.array(v.string()),
+    contacts: v.string(),
+    notes: v.string(),
+    lastVerified: v.string(),
+    region: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...fields } = args;
+    await ctx.db.patch(id, fields);
+  },
+});
+
 export const deleteService = mutation({
   args: { id: v.id("services") },
   handler: async (ctx, args) => {

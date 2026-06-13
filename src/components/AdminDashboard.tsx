@@ -188,7 +188,14 @@ export function AdminDashboard() {
 
   const handleRepSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveRepresentativeMutation(repFormData);
+    if (editingRepresentative) {
+      updateRepresentativeMutation({
+        id: editingRepresentative._id,
+        ...repFormData,
+      });
+    } else {
+      saveRepresentativeMutation(repFormData);
+    }
     resetRepForm();
   };
 
@@ -209,7 +216,11 @@ export function AdminDashboard() {
         .map((l) => l.trim())
         .filter((l) => l),
     };
-    saveServiceMutation(serviceData);
+    if (editingService) {
+      updateServiceMutation({ id: editingService._id, ...serviceData });
+    } else {
+      saveServiceMutation(serviceData);
+    }
     resetForm();
   };
 
