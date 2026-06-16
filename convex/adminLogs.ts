@@ -1,6 +1,23 @@
-import { mutation } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
+
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const admin = await ctx.db
+      .query("admins")
+      .withIndex("by_userId", (q) => q.eq("userId", identity.subject as Id<"users">))
+      .first();
+    if (!admin) throw new Error("Not an admin");
+    return await ctx.db
+      .query("adminLogs")
+      .order("desc")
+      .take(100);
+  },
+});
 
 export const log = mutation({
   args: {

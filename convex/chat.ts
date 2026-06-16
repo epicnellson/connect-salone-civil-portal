@@ -88,12 +88,13 @@ export const sendMessage = action({
     sessionId: v.string(),
   },
   handler: async (ctx, args) => {
-    // Rate Limiting: Check last message time
-    const lastMessage = await ctx.runQuery(api.chat.getLastMessage, {
+    // Rate limiting: max 20 messages per minute per session
+    const recentMessages = await ctx.runQuery(api.chat.getRecentMessages, {
       sessionId: args.sessionId,
+      since: Date.now() - 60000,
     });
-    if (lastMessage && Date.now() - lastMessage.timestamp < 5000) {
-      throw new Error("Whoa, slow down! Please wait a few seconds.");
+    if (recentMessages.length >= 20) {
+      throw new Error("You've reached the message limit. Please wait a moment before sending more messages.");
     }
 
     // Get AI response using Groq (free alternative to OpenAI)
@@ -104,14 +105,12 @@ export const sendMessage = action({
     });
 
     try {
-      console.log(`DEBUG: Processing message from session ${args.sessionId}`);
       // Check for specific greeting pattern
       if (
         args.message.toLowerCase().trim() === "hy" ||
         args.message.toLowerCase().trim() === "hi"
       ) {
-        const greetingResponse = "hi";
-        console.log("DEBUG: Greeting detected, skipping OpenAI");
+        const greetingResponse = "Hello! How can I help you with Sierra Leone government services today?";
 
         // Save the conversation
         await ctx.runMutation(api.chat.saveMessage, {
@@ -123,7 +122,6 @@ export const sendMessage = action({
         return greetingResponse;
       }
 
-      console.log("DEBUG: Calling OpenAI...");
       const completion = await openai.chat.completions.create({
         model: "llama-3.1-8b-instant",
         messages: [
@@ -166,9 +164,7 @@ Available services include passport applications, business registration, driver'
 
       return aiResponse;
     } catch (error: any) {
-      console.error("DEBUG: OpenAI API error history:", error);
       const errorMessage = error?.message || String(error);
-      console.error("DEBUG: Error message:", errorMessage);
 
       // Check if it's an OpenAI quota/credit issue
       if (
@@ -214,23 +210,13 @@ export const saveMessage = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    console.log(
-      `DEBUG: saveMessage - userId: ${userId}, sessionId: ${args.sessionId}`,
-    );
-
-    try {
-      await ctx.db.insert("chatMessages", {
-        userId: userId || undefined,
-        sessionId: args.sessionId,
-        message: args.message,
-        response: args.response,
-        timestamp: Date.now(),
-      });
-      console.log("DEBUG: Message saved to DB");
-    } catch (dbError) {
-      console.error("DEBUG: Database insert error:", dbError);
-      throw dbError;
-    }
+    await ctx.db.insert("chatMessages", {
+      userId: userId || undefined,
+      sessionId: args.sessionId,
+      message: args.message,
+      response: args.response,
+      timestamp: Date.now(),
+    });
   },
 });
 
@@ -247,13 +233,14 @@ export const getChatHistory = query({
   },
 });
 
-export const getLastMessage = query({
-  args: { sessionId: v.string() },
+export const getRecentMessages = query({
+  args: { sessionId: v.string(), since: v.number() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const messages = await ctx.db
       .query("chatMessages")
       .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
       .order("desc")
-      .first();
+      .collect();
+    return messages.filter((m) => m.timestamp >= args.since);
   },
 });

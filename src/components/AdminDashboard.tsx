@@ -5,6 +5,9 @@ import { api } from "../../convex/_generated/api";
 import { motion } from "framer-motion";
 import type { Doc } from "../../convex/_generated/dataModel";
 import { downloadCsv } from "@/lib/csv";
+import { AdminAuditLog } from "@/components/AdminAuditLog";
+import { AdminFeedback } from "@/components/AdminFeedback";
+import { AdminStats } from "@/components/AdminStats";
 import {
   Download,
   LogOut,
@@ -15,6 +18,9 @@ import {
   Users,
   FileText,
   UserCheck,
+  Activity,
+  MessageSquare,
+  BarChart3,
 } from "lucide-react";
 
 export function AdminDashboard() {
@@ -24,7 +30,7 @@ export function AdminDashboard() {
   );
   const [editingRepresentative, setEditingRepresentative] =
     useState<Doc<"representatives"> | null>(null);
-  const [activeTab, setActiveTab] = useState<"services" | "representatives">(
+  const [activeTab, setActiveTab] = useState<"services" | "representatives" | "audit" | "feedback" | "stats">(
     "services",
   );
   const [formData, setFormData] = useState({
@@ -273,6 +279,17 @@ export function AdminDashboard() {
 
       <div className="flex gap-4 mb-6 sm:mb-8 border-b border-gray-700 overflow-x-auto no-scrollbar">
         <button
+          onClick={() => setActiveTab("stats")}
+          className={`pb-3 px-1 font-medium text-sm transition-colors whitespace-nowrap ${
+            activeTab === "stats"
+              ? "text-emerald-400 border-b-2 border-emerald-400"
+              : "text-gray-400 hover:text-gray-300"
+          }`}
+        >
+          <BarChart3 size={16} className="inline mr-1.5" />
+          Stats
+        </button>
+        <button
           onClick={() => setActiveTab("services")}
           className={`pb-3 px-1 font-medium text-sm transition-colors whitespace-nowrap ${
             activeTab === "services"
@@ -294,7 +311,43 @@ export function AdminDashboard() {
           <UserCheck size={16} className="inline mr-1.5" />
           Representatives
         </button>
+        <button
+          onClick={() => setActiveTab("audit")}
+          className={`pb-3 px-1 font-medium text-sm transition-colors whitespace-nowrap ${
+            activeTab === "audit"
+              ? "text-emerald-400 border-b-2 border-emerald-400"
+              : "text-gray-400 hover:text-gray-300"
+          }`}
+        >
+          <Activity size={16} className="inline mr-1.5" />
+          Audit Log
+        </button>
+        <button
+          onClick={() => setActiveTab("feedback")}
+          className={`pb-3 px-1 font-medium text-sm transition-colors whitespace-nowrap ${
+            activeTab === "feedback"
+              ? "text-emerald-400 border-b-2 border-emerald-400"
+              : "text-gray-400 hover:text-gray-300"
+          }`}
+        >
+          <MessageSquare size={16} className="inline mr-1.5" />
+          Feedback
+        </button>
       </div>
+
+      {activeTab === "stats" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card card-hover p-6"
+        >
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <BarChart3 size={20} className="text-emerald-400" />
+            Dashboard Stats
+          </h2>
+          <AdminStats />
+        </motion.div>
+      )}
 
       {activeTab === "services" && (
         <div className="grid md:grid-cols-2 gap-8">
@@ -730,6 +783,34 @@ export function AdminDashboard() {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {activeTab === "audit" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card card-hover p-6"
+        >
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Activity size={20} className="text-purple-400" />
+            Audit Log
+          </h2>
+          <AdminAuditLog />
+        </motion.div>
+      )}
+
+      {activeTab === "feedback" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card card-hover p-6"
+        >
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <MessageSquare size={20} className="text-purple-400" />
+            Feedback
+          </h2>
+          <AdminFeedback />
+        </motion.div>
       )}
     </div>
   );

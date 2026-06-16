@@ -3,6 +3,7 @@ import { useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Skeleton } from "@/components/Skeleton";
+import { FeedbackForm } from "@/components/FeedbackForm";
 import { motion } from "framer-motion";
 import { Search, Phone, Mail, MapPin, Building } from "lucide-react";
 
@@ -108,6 +109,8 @@ export function RepresentativeFinder() {
           </div>
         </div>
       </motion.div>
+
+      <FeedbackForm relatedEntityType="representatives" />
 
       {/* Representatives List */}
       {representatives.length === 0 &&

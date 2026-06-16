@@ -14,11 +14,13 @@ import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
 import type * as clear from "../clear.js";
 import type * as diagnostic from "../diagnostic.js";
+import type * as feedback from "../feedback.js";
 import type * as http from "../http.js";
 import type * as representatives from "../representatives.js";
 import type * as router from "../router.js";
 import type * as seed from "../seed.js";
 import type * as services from "../services.js";
+import type * as stats from "../stats.js";
 
 import type {
   ApiFromModules,
@@ -33,11 +35,13 @@ declare const fullApi: ApiFromModules<{
   chat: typeof chat;
   clear: typeof clear;
   diagnostic: typeof diagnostic;
+  feedback: typeof feedback;
   http: typeof http;
   representatives: typeof representatives;
   router: typeof router;
   seed: typeof seed;
   services: typeof services;
+  stats: typeof stats;
 }>;
 
 /**

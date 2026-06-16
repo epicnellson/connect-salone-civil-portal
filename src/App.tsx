@@ -233,6 +233,7 @@ function Content({
   t: any;
 }) {
   const loggedInUser = useQuery(api.auth.loggedInUser);
+  const isAuthenticated = loggedInUser !== undefined && loggedInUser !== null;
 
   if (loggedInUser === undefined) {
     return (
@@ -242,7 +243,17 @@ function Content({
     );
   }
 
+  const publicTabs = ["services", "representatives", "news"] as const;
+  const allTabs = isAuthenticated
+    ? (["chat", "services", "representatives", "news"] as const)
+    : publicTabs;
+
+  if (!isAuthenticated && (activeTab === "chat" || activeTab === "admin")) {
+    setActiveTab("services");
+  }
+
   if (activeTab === "admin") {
+    if (!isAuthenticated) return null;
     return (
       <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <ErrorBoundary name="AdminDashboard">
@@ -254,110 +265,89 @@ function Content({
 
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-      <Unauthenticated>
-        <div className="min-h-[70vh] flex items-center justify-center px-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-card card-hover p-8 max-w-md w-full"
-          >
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-xl">SL</span>
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Welcome to SaloneHub</h2>
-              <p className="text-sm text-muted-foreground">
-                Sign in to access Sierra Leone government services
-              </p>
-            </div>
-            <SignInForm />
-          </motion.div>
-        </div>
-      </Unauthenticated>
-
-      <Authenticated>
+      {isAuthenticated && (
         <div className="mb-6">
           <h2 className="text-2xl font-bold tracking-tight mb-1">
-            Welcome back, {loggedInUser?.email?.split("@")[0] || "Citizen"}!
+            Welcome back, {loggedInUser.email?.split("@")[0] || "Citizen"}!
           </h2>
           <p className="text-muted-foreground">
             What do you want to do today — ask the AI, browse services, or find
             officials?
           </p>
         </div>
+      )}
 
-        {/* Navigation Tabs */}
-        <div className="glass-card p-1.5 mb-4 sm:mb-6 flex gap-1 overflow-x-auto no-scrollbar" role="tablist" aria-label="Main navigation">
+      {!isAuthenticated && activeTab === "services" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-6 mb-6 text-center"
+        >
+          <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <span className="text-white font-bold text-lg">SL</span>
+          </div>
+          <h2 className="text-2xl font-bold mb-1">SaloneHub</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Sierra Leone civic portal — browse services and officials freely.
+            Sign in for AI chat assistance.
+          </p>
           <button
-            role="tab"
-            aria-selected={activeTab === "chat"}
             onClick={() => setActiveTab("chat")}
-            className={cn(
-              "flex-1 min-w-0 rounded-xl px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold smooth-transition",
-              activeTab === "chat"
-                ? "bg-white/70 dark:bg-white/10 shadow-sm"
-                : "hover:bg-white/50 dark:hover:bg-white/5 text-muted-foreground",
-            )}
+            className="btn-primary text-sm"
           >
-            🤖 {t("chat.title")}
+            Sign in to use AI Assistant
           </button>
-          <button
-            role="tab"
-            aria-selected={activeTab === "services"}
-            onClick={() => setActiveTab("services")}
-            className={cn(
-              "flex-1 min-w-0 rounded-xl px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold smooth-transition",
-              activeTab === "services"
-                ? "bg-white/70 dark:bg-white/10 shadow-sm"
-                : "hover:bg-white/50 dark:hover:bg-white/5 text-muted-foreground",
-            )}
-          >
-            📋 {t("services")}
-          </button>
-          <button
-            role="tab"
-            aria-selected={activeTab === "representatives"}
-            onClick={() => setActiveTab("representatives")}
-            className={cn(
-              "flex-1 min-w-0 rounded-xl px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold smooth-transition",
-              activeTab === "representatives"
-                ? "bg-white/70 dark:bg-white/10 shadow-sm"
-                : "hover:bg-white/50 dark:hover:bg-white/5 text-muted-foreground",
-            )}
-          >
-            👥 {t("officials")}
-          </button>
-          <button
-            role="tab"
-            aria-selected={activeTab === "news"}
-            onClick={() => setActiveTab("news")}
-            className={cn(
-              "flex-1 min-w-0 rounded-xl px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold smooth-transition",
-              activeTab === "news"
-                ? "bg-white/70 dark:bg-white/10 shadow-sm"
-                : "hover:bg-white/50 dark:hover:bg-white/5 text-muted-foreground",
-            )}
-          >
-            📰 {t("news")}
-          </button>
-        </div>
+        </motion.div>
+      )}
 
-        {/* Tab Content */}
-        <div className="animate-fade-in">
+      {/* Navigation Tabs */}
+      <div className="glass-card p-1.5 mb-4 sm:mb-6 flex gap-1 overflow-x-auto no-scrollbar" role="tablist" aria-label="Main navigation">
+        {allTabs.map((tab) => {
+          const label =
+            tab === "chat" ? "🤖 " + t("chat.title")
+            : tab === "services" ? "📋 " + t("services")
+            : tab === "representatives" ? "👥 " + t("officials")
+            : "📰 " + t("news");
+          return (
+            <button
+              key={tab}
+              role="tab"
+              aria-selected={activeTab === tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "flex-1 min-w-0 rounded-xl px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold smooth-transition",
+                activeTab === tab
+                  ? "bg-white/70 dark:bg-white/10 shadow-sm"
+                  : "hover:bg-white/50 dark:hover:bg-white/5 text-muted-foreground",
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab Content */}
+      <div className="animate-fade-in">
+        {isAuthenticated && (
           <ErrorBoundary name="ChatInterface">
             {activeTab === "chat" && <ChatInterface />}
           </ErrorBoundary>
-          <ErrorBoundary name="ServiceDirectory">
-            {activeTab === "services" && <ServiceDirectory />}
-          </ErrorBoundary>
-          <ErrorBoundary name="RepresentativeFinder">
-            {activeTab === "representatives" && <RepresentativeFinder />}
-          </ErrorBoundary>
-          <ErrorBoundary name="NewsSection">
-            {activeTab === "news" && <NewsSection />}
-          </ErrorBoundary>
-        </div>
-      </Authenticated>
+        )}
+        {activeTab !== "chat" && (
+          <>
+            <ErrorBoundary name="ServiceDirectory">
+              {activeTab === "services" && <ServiceDirectory />}
+            </ErrorBoundary>
+            <ErrorBoundary name="RepresentativeFinder">
+              {activeTab === "representatives" && <RepresentativeFinder />}
+            </ErrorBoundary>
+            <ErrorBoundary name="NewsSection">
+              {activeTab === "news" && <NewsSection />}
+            </ErrorBoundary>
+          </>
+        )}
+      </div>
     </div>
   );
 }

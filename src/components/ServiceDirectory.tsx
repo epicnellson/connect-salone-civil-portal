@@ -4,6 +4,8 @@ import { api } from "../../convex/_generated/api";
 import { Modal } from "@/components/Modal";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Skeleton } from "@/components/Skeleton";
+import { FeedbackForm } from "@/components/FeedbackForm";
+import { JourneyMap } from "@/components/JourneyMap";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -149,6 +151,8 @@ export function ServiceDirectory() {
           </div>
         </div>
       </motion.div>
+
+      <FeedbackForm relatedEntityType="services" />
 
       {/* Services Grid */}
       {services.length === 0 &&
@@ -327,6 +331,21 @@ export function ServiceDirectory() {
                 ))}
               </ul>
             </motion.div>
+
+            {selectedService.processSteps && selectedService.processSteps.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.35 }}
+              >
+                <JourneyMap
+                  title="Process Steps"
+                  steps={selectedService.processSteps.map((step) => ({
+                    label: step,
+                  }))}
+                />
+              </motion.div>
+            )}
 
             <motion.div
               initial={{ opacity: 0, x: -20 }}

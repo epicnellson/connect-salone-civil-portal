@@ -64,6 +64,21 @@ const applicationTables = {
     userId: v.id("users"),
   }).index("by_userId", ["userId"]),
 
+  feedback: defineTable({
+    userId: v.optional(v.id("users")),
+    name: v.string(),
+    email: v.optional(v.string()),
+    category: v.string(),
+    message: v.string(),
+    relatedEntityType: v.optional(v.string()),
+    relatedEntityId: v.optional(v.string()),
+    status: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_category", ["category"])
+    .index("by_createdAt", ["createdAt"]),
+
   adminLogs: defineTable({
     adminId: v.id("users"),
     action: v.string(),

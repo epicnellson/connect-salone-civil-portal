@@ -1,0 +1,112 @@
+// ============================================================
+// SaloneHub ER Diagram — dbdiagram.io DSL
+// SDG 16: Peace, Justice and Strong Institutions
+// Paste at https://dbdiagram.io
+// Legend: PK = Primary Key (🔑), FK = Foreign Key (🔗)
+// ============================================================
+
+// ─── AUTH / USER TABLES ─────────────────────────────────────
+
+Table users {
+  _id string [primary key]
+  name string
+  email string
+  emailVerificationTime int
+  image string
+  phone string
+  isAnonymous bool
+  authProviderId string
+}
+
+Table sessions {
+  _id string [primary key]
+  userId string [not null, ref: > users._id]  // many sessions → one user
+  expiresAt int
+  sessionToken string
+}
+
+Table authAccounts {
+  _id string [primary key]
+  userId string [not null, ref: > users._id]  // many accounts → one user
+  provider string
+  providerAccountId string
+}
+
+Table authVerificationCodes {
+  _id string [primary key]
+  userId string [not null, ref: > users._id]  // many codes → one user
+  identifier string
+  expiresAt int
+  code string
+  numAttempts int
+}
+
+Table admins {
+  _id string [primary key]
+  userId string [not null, unique, ref: > users._id]  // one admin → one user
+}
+
+// ─── APPLICATION TABLES ─────────────────────────────────────
+
+Table services {
+  _id string [primary key]
+  name string
+  agency string
+  fee string
+  processingTime string
+  documents string[]
+  eligibility string
+  processSteps string[]
+  locations string[]
+  contacts string
+  notes string
+  lastVerified string
+  region string
+  ministry string
+  category string
+  description string
+  requirements string[]
+  officialFees string
+  contactInfo string
+  websiteUrl string
+  // managed by: admins (non-FK — admin rights checked via auth)
+}
+
+Table representatives {
+  _id string [primary key]
+  name string
+  role string
+  district string
+  constituency string
+  phone string
+  email string
+  title string
+  ministry string
+  office string
+  officeAddress string
+  // managed by: admins (non-FK — admin rights checked via auth)
+}
+
+Table chatMessages {
+  _id string [primary key]
+  userId string [ref: > users._id]            // many messages → one user
+  sessionId string [not null]
+
+  message string
+  response string
+  timestamp int
+}
+
+// ─── RELATIONSHIPS (explicit cardinality) ──────────────────
+// All relationships below are one-to-many unless noted.
+// The side with the FK is the "many" side.
+
+Ref: sessions.userId > users._id                  // many sessions belong to one user
+Ref: authAccounts.userId > users._id              // many accounts belong to one user
+Ref: authVerificationCodes.userId > users._id     // many verification codes belong to one user
+Ref: admins.userId > users._id                    // one admin user (unique constraint = one-to-one via FK)
+Ref: chatMessages.userId > users._id              // many chat messages belong to one user
+
+// Note: services and representatives are managed by admins through
+// application logic (auth check via convex/admin.ts), not via foreign keys.
+// An admin must be authenticated to create/edit/delete these records.
