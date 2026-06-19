@@ -1,8 +1,5 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite",
-  "env": {
-    "VITE_CONVEX_URL": "https://rare-badger-608.convex.cloud"
-  }
+  "framework": "vite"
 }

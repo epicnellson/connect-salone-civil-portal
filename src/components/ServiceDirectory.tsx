@@ -161,8 +161,7 @@ export function ServiceDirectory({ isAuthenticated = false, onLoginPrompt }: Ser
       <FeedbackForm relatedEntityType="services" />
 
       {/* Services Grid */}
-      {services.length === 0 &&
-      (searchTerm || selectedAgency || selectedRegion) ? (
+      {services.length === 0 && status !== "LoadingFirstPage" ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}

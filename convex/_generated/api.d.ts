@@ -17,6 +17,7 @@ import type * as diagnostic from "../diagnostic.js";
 import type * as feedback from "../feedback.js";
 import type * as http from "../http.js";
 import type * as news from "../news.js";
+import type * as passwordReset from "../passwordReset.js";
 import type * as representatives from "../representatives.js";
 import type * as router from "../router.js";
 import type * as seed from "../seed.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   feedback: typeof feedback;
   http: typeof http;
   news: typeof news;
+  passwordReset: typeof passwordReset;
   representatives: typeof representatives;
   router: typeof router;
   seed: typeof seed;
