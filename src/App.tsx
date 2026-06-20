@@ -59,7 +59,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<
     "chat" | "services" | "representatives" | "news" | "admin"
-  >("chat");
+  >("services");
   const [tourOpen, setTourOpen] = useState(false);
 
   const { theme, resolvedTheme, cycleTheme } = useTheme();
@@ -224,13 +224,6 @@ function Content({
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [loginPromptFeature, setLoginPromptFeature] = useState("");
 
-  // Redirect locked initial tabs to services for guests
-  useEffect(() => {
-    if (!isAuthenticated && loggedInUser !== undefined && (activeTab === "chat" || activeTab === "representatives" || activeTab === "news")) {
-      setActiveTab("services");
-    }
-  }, [isAuthenticated, loggedInUser, activeTab, setActiveTab]);
-
   const handleLockedTabClick = (tab: "chat" | "representatives" | "news") => {
     const featureName = tab === "chat"
       ? "the AI Assistant"
@@ -348,7 +341,6 @@ function Content({
                 <ServiceDirectory
                   isAuthenticated={isAuthenticated}
                   onLoginPrompt={(feature) => {
-                    setIntendedTab("services");
                     setLoginPromptFeature(feature);
                     setShowLoginPrompt(true);
                   }}
