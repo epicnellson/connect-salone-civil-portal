@@ -77,6 +77,35 @@ export const revokeAdmin = mutation({
   },
 });
 
+export const seedGrantAdmin = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("admins")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+    if (existing) return { success: true, alreadyAdmin: true };
+    await ctx.db.insert("admins", { userId: args.userId });
+    return { success: true, alreadyAdmin: false };
+  },
+});
+
+export const removeOldTestAccounts = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const testEmails = new Set(["admin@salonehub.sl", "alice@test.com", "bob@test.com"]);
+    const accounts = await ctx.db.query("authAccounts").collect();
+    let removed = 0;
+    for (const acct of accounts) {
+      if (testEmails.has(acct.providerAccountId)) {
+        await ctx.db.delete(acct._id);
+        removed++;
+      }
+    }
+    return { removed };
+  },
+});
+
 export const seedUsers = action({
   args: {},
   handler: async (ctx) => {
@@ -85,11 +114,8 @@ export const seedUsers = action({
     const callerAdmin = await ctx.runQuery(api.admin.isAdmin);
     if (!callerAdmin) throw new ConvexError("Unauthorized: Admin only");
 
-    // Idempotency: skip if any test users already exist
-    const existingUsers = await ctx.runQuery(api.admin.listUsers);
-    if (existingUsers.length > 0) {
-      return { results: [], skipped: true };
-    }
+    // Remove old accounts so we can re-create with updated passwords
+    await ctx.runMutation(api.admin.removeOldTestAccounts);
 
     const testUsers = [
       { email: "admin@salonehub.sl", password: "admin1234", name: "Admin" },
@@ -128,7 +154,7 @@ export const seedUsers = action({
       (r) => r.success && r.email === "admin@salonehub.sl",
     );
     if (adminUser?.userId) {
-      await ctx.runMutation(api.admin.grantAdmin, {
+      await ctx.runMutation(api.admin.seedGrantAdmin, {
         userId: adminUser.userId as any,
       });
     }
