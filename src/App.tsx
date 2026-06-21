@@ -1,15 +1,16 @@
 import { useQuery } from "convex/react";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 import { api } from "../convex/_generated/api";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoginPromptModal } from "@/components/LoginPromptModal";
+import { SignInForm } from "./SignInForm";
 import { SignOutButton } from "./SignOutButton";
 import { Toaster } from "sonner";
 import { useTranslation } from "react-i18next";
 import { LiquidBackground } from "@/components/LiquidBackground";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Modal } from "@/components/Modal";
 import { Footer } from "@/components/Footer";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { MobileMenu } from "./components/MobileMenu";
@@ -48,7 +49,83 @@ function IsAdmin({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-export default function App() {
+function LoginPage() {
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const isAuthenticated = loggedInUser !== undefined && loggedInUser !== null;
+  const { theme, cycleTheme } = useTheme();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = params.get("returnTo") || "/";
+    }
+  }, [isAuthenticated]);
+
+  if (isAuthenticated) return null;
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <LiquidBackground />
+      <header className="sticky top-0 z-10">
+        <div className="glass-surface border-b border-white/20 dark:border-white/10 shadow-sm">
+          <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-emerald-500 via-green-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-sm">
+                  <span className="text-white font-bold text-xs sm:text-sm">SL</span>
+                </div>
+                <div>
+                  <h1 className="text-base sm:text-xl font-bold tracking-tight">SaloneHub</h1>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
+                    Sierra Leone civic portal
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher />
+                <ThemeToggle theme={theme} onCycle={cycleTheme} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 flex items-center justify-center px-3 sm:px-4 py-8">
+        <div className="w-full max-w-md">
+          <div className="glass-card p-6 sm:p-8">
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 via-green-600 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <span className="text-white font-bold text-xl">SL</span>
+              </div>
+              <h2 className="text-2xl font-bold tracking-tight">Welcome to SaloneHub</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Sign in or create an account to get started
+              </p>
+            </div>
+
+            <SignInForm
+              onSuccess={() => {
+                const params = new URLSearchParams(window.location.search);
+                window.location.href = params.get("returnTo") || "/";
+              }}
+            />
+
+            <div className="mt-6 text-center">
+              <a
+                href="/"
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                ← Back to home
+              </a>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function MainApp() {
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -84,6 +161,110 @@ export default function App() {
     }
   };
 
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const adminCheck = useQuery(api.admin.isAdmin);
+  const isAuthenticated = loggedInUser !== undefined && loggedInUser !== null;
+
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [loginPromptFeature, setLoginPromptFeature] = useState("");
+
+  const handleLockedTabClick = (tab: "chat" | "representatives" | "news") => {
+    const featureName = tab === "chat"
+      ? "the AI Assistant"
+      : tab === "representatives"
+        ? "find your representative"
+        : "civic news";
+    setLoginPromptFeature(featureName);
+    setShowLoginPrompt(true);
+  };
+
+  const handleTabClick = (tab: "chat" | "services" | "representatives" | "news" | "admin") => {
+    if (tab === "admin") {
+      setActiveTab("admin");
+      return;
+    }
+    if (!isAuthenticated && tab !== "services") {
+      handleLockedTabClick(tab);
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  const canAccess = (tab: string) => {
+    if (tab === "admin") return adminCheck === true;
+    if (tab === "services") return true;
+    return isAuthenticated;
+  };
+
+  if (loggedInUser === undefined) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <LiquidBackground />
+        <header className="sticky top-0 z-10">
+          <div className="glass-surface border-b border-white/20 dark:border-white/10 shadow-sm">
+            <div className="max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
+              <div className="flex justify-between items-center gap-1 sm:gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-emerald-500 via-green-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                    <span className="text-white font-bold text-xs sm:text-sm">SL</span>
+                  </div>
+                  <div className="min-w-0">
+                    <h1 className="text-base sm:text-xl font-bold tracking-tight truncate">SaloneHub</h1>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Sierra Leone civic portal</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="hidden sm:flex items-center gap-1 sm:gap-2">
+                    <LanguageSwitcher />
+                    <ThemeToggle theme={theme} onCycle={cycleTheme} />
+                    <SignOutButton />
+                  </div>
+                  <MobileMenu theme={theme} onCycle={cycleTheme} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 flex justify-center items-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+        </main>
+      </div>
+    );
+  }
+
+  if (activeTab === "admin") {
+    if (adminCheck !== true) return null;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <LiquidBackground />
+        <header className="sticky top-0 z-10">
+          <div className="glass-surface border-b border-white/20 dark:border-white/10 shadow-sm">
+            <div className="max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
+              <div className="flex justify-between items-center gap-1 sm:gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-emerald-500 via-green-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                    <span className="text-white font-bold text-xs sm:text-sm">SL</span>
+                  </div>
+                  <div className="min-w-0">
+                    <h1 className="text-base sm:text-xl font-bold tracking-tight truncate">SaloneHub</h1>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Sierra Leone civic portal</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full">
+          <ErrorBoundary name="AdminDashboard">
+            <AdminDashboard onBack={() => setActiveTab("chat")} />
+          </ErrorBoundary>
+        </main>
+      </div>
+    );
+  }
+
+  const allTabs = ["services", "chat", "representatives", "news"] as const;
+
   return (
     <HelmetProvider>
     <div className="min-h-screen flex flex-col">
@@ -98,17 +279,11 @@ export default function App() {
             <div className="flex justify-between items-center gap-1 sm:gap-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-emerald-500 via-green-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-                  <span className="text-white font-bold text-xs sm:text-sm">
-                    SL
-                  </span>
+                  <span className="text-white font-bold text-xs sm:text-sm">SL</span>
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-base sm:text-xl font-bold tracking-tight truncate">
-                    SaloneHub
-                  </h1>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
-                    Sierra Leone civic portal
-                  </p>
+                  <h1 className="text-base sm:text-xl font-bold tracking-tight truncate">SaloneHub</h1>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Sierra Leone civic portal</p>
                 </div>
               </div>
 
@@ -153,7 +328,106 @@ export default function App() {
             </div>
           }
         >
-          <Content activeTab={activeTab} setActiveTab={setActiveTab} t={t} />
+          <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+            {isAuthenticated && (
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold tracking-tight mb-1">
+                  {t("welcomeBack", { name: loggedInUser.email?.split("@")[0] || "Citizen" })}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t("welcomePrompt")}
+                </p>
+              </div>
+            )}
+
+            {/* Navigation Tabs - always all 4 */}
+            <div className="glass-card p-1.5 mb-4 sm:mb-6 flex gap-1 overflow-x-auto no-scrollbar" role="tablist" aria-label="Main navigation">
+              {allTabs.map((tab) => {
+                const label =
+                  tab === "services" ? "📋 " + t("services")
+                  : tab === "chat" ? "🤖 " + t("chat.title")
+                  : tab === "representatives" ? "👥 " + t("officials")
+                  : "📰 " + t("news");
+                const isLocked = !isAuthenticated && tab !== "services";
+                return (
+                  <button
+                    key={tab}
+                    role="tab"
+                    aria-selected={activeTab === tab}
+                    onClick={() => handleTabClick(tab)}
+                    className={cn(
+                      "flex-1 min-w-0 rounded-xl px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold smooth-transition",
+                      activeTab === tab
+                        ? "bg-white/70 dark:bg-white/10 shadow-sm"
+                        : "hover:bg-white/50 dark:hover:bg-white/5 text-muted-foreground",
+                    )}
+                  >
+                    {label}{isLocked ? " 🔒" : ""}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tab Content - guarded by canAccess */}
+            <div className="animate-fade-in">
+              {!canAccess(activeTab) && activeTab !== "admin" ? (
+                <div className="text-center py-12">
+                  <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white font-bold text-lg">🔒</span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Sign In Required</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Please sign in to access this feature.
+                  </p>
+                  <button
+                    onClick={() => handleLockedTabClick(activeTab as "chat" | "representatives" | "news")}
+                    className="btn-primary"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {activeTab === "services" && (
+                    <ErrorBoundary name="ServiceDirectory">
+                      <ServiceDirectory
+                        isAuthenticated={isAuthenticated}
+                        onLoginPrompt={(feature) => {
+                          setLoginPromptFeature(feature);
+                          setShowLoginPrompt(true);
+                        }}
+                      />
+                    </ErrorBoundary>
+                  )}
+                  {activeTab === "chat" && (
+                    <ErrorBoundary name="ChatInterface">
+                      <ChatInterface />
+                    </ErrorBoundary>
+                  )}
+                  {activeTab === "representatives" && (
+                    <ErrorBoundary name="RepresentativeFinder">
+                      <RepresentativeFinder />
+                    </ErrorBoundary>
+                  )}
+                  {activeTab === "news" && (
+                    <ErrorBoundary name="NewsSection">
+                      <NewsSection />
+                    </ErrorBoundary>
+                  )}
+                </>
+              )}
+            </div>
+
+            <LoginPromptModal
+              isOpen={showLoginPrompt}
+              onClose={() => setShowLoginPrompt(false)}
+              featureName={loginPromptFeature}
+              onSignIn={() => {
+                setShowLoginPrompt(false);
+                window.location.href = "/login";
+              }}
+            />
+          </div>
         </Suspense>
       </main>
 
@@ -205,176 +479,22 @@ export default function App() {
   );
 }
 
-function Content({
-  activeTab,
-  setActiveTab,
-  t,
-}: {
-  activeTab: "chat" | "services" | "representatives" | "news" | "admin";
-  setActiveTab: (
-    tab: "chat" | "services" | "representatives" | "news" | "admin",
-  ) => void;
-  t: any;
-}) {
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-  const adminCheck = useQuery(api.admin.isAdmin);
-  const isAuthenticated = loggedInUser !== undefined && loggedInUser !== null;
-
-  const navigate = useNavigate();
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [loginPromptFeature, setLoginPromptFeature] = useState("");
-
-  const handleLockedTabClick = (tab: "chat" | "representatives" | "news") => {
-    const featureName = tab === "chat"
-      ? "the AI Assistant"
-      : tab === "representatives"
-        ? "find your representative"
-        : "civic news";
-    setLoginPromptFeature(featureName);
-    setShowLoginPrompt(true);
-  };
-
-  const handleTabClick = (tab: "chat" | "services" | "representatives" | "news" | "admin") => {
-    if (tab === "admin") {
-      setActiveTab("admin");
-      return;
-    }
-    if (!isAuthenticated && tab !== "services") {
-      handleLockedTabClick(tab);
-      return;
-    }
-    setActiveTab(tab);
-  };
-
-  const canAccess = (tab: string) => {
-    if (tab === "admin") return adminCheck === true;
-    if (tab === "services") return true;
-    return isAuthenticated;
-  };
-
-  if (loggedInUser === undefined) {
-    return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-      </div>
-    );
-  }
-
-  if (activeTab === "admin") {
-    if (adminCheck !== true) return null;
-    return (
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <ErrorBoundary name="AdminDashboard">
-          <AdminDashboard onBack={() => setActiveTab("chat")} />
-        </ErrorBoundary>
-      </div>
-    );
-  }
-
-  const allTabs = ["services", "chat", "representatives", "news"] as const;
-
-  return (
-    <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-      {isAuthenticated && (
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold tracking-tight mb-1">
-            {t("welcomeBack", { name: loggedInUser.email?.split("@")[0] || "Citizen" })}
-          </h2>
-          <p className="text-muted-foreground">
-            {t("welcomePrompt")}
-          </p>
-        </div>
-      )}
-
-
-
-      {/* Navigation Tabs - always all 4 */}
-      <div className="glass-card p-1.5 mb-4 sm:mb-6 flex gap-1 overflow-x-auto no-scrollbar" role="tablist" aria-label="Main navigation">
-        {allTabs.map((tab) => {
-          const label =
-            tab === "services" ? "📋 " + t("services")
-            : tab === "chat" ? "🤖 " + t("chat.title")
-            : tab === "representatives" ? "👥 " + t("officials")
-            : "📰 " + t("news");
-          const isLocked = !isAuthenticated && tab !== "services";
-          return (
-            <button
-              key={tab}
-              role="tab"
-              aria-selected={activeTab === tab}
-              onClick={() => handleTabClick(tab)}
-              className={cn(
-                "flex-1 min-w-0 rounded-xl px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold smooth-transition",
-                activeTab === tab
-                  ? "bg-white/70 dark:bg-white/10 shadow-sm"
-                  : "hover:bg-white/50 dark:hover:bg-white/5 text-muted-foreground",
-              )}
-            >
-              {label}{isLocked ? " 🔒" : ""}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab Content - guarded by canAccess */}
-      <div className="animate-fade-in">
-        {!canAccess(activeTab) && activeTab !== "admin" ? (
-          <div className="text-center py-12">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-lg">🔒</span>
-            </div>
-            <h3 className="text-xl font-bold mb-2">Sign In Required</h3>
-            <p className="text-muted-foreground mb-4">
-              Please sign in to access this feature.
-            </p>
-            <button
-              onClick={() => handleLockedTabClick(activeTab as "chat" | "representatives" | "news")}
-              className="btn-primary"
-            >
-              Sign In
-            </button>
-          </div>
-        ) : (
-          <>
-            {activeTab === "services" && (
-              <ErrorBoundary name="ServiceDirectory">
-                <ServiceDirectory
-                  isAuthenticated={isAuthenticated}
-                  onLoginPrompt={(feature) => {
-                    setLoginPromptFeature(feature);
-                    setShowLoginPrompt(true);
-                  }}
-                />
-              </ErrorBoundary>
-            )}
-            {activeTab === "chat" && (
-              <ErrorBoundary name="ChatInterface">
-                <ChatInterface />
-              </ErrorBoundary>
-            )}
-            {activeTab === "representatives" && (
-              <ErrorBoundary name="RepresentativeFinder">
-                <RepresentativeFinder />
-              </ErrorBoundary>
-            )}
-            {activeTab === "news" && (
-              <ErrorBoundary name="NewsSection">
-                <NewsSection />
-              </ErrorBoundary>
-            )}
-          </>
-        )}
-      </div>
-
-      <LoginPromptModal
-        isOpen={showLoginPrompt}
-        onClose={() => setShowLoginPrompt(false)}
-        featureName={loginPromptFeature}
-        onSignIn={() => {
-          setShowLoginPrompt(false);
-          void navigate("/login");
-        }}
-      />
-    </div>
+export default function App() {
+  const [isLoginPage, setIsLoginPage] = useState(
+    typeof window !== "undefined" && window.location.pathname === "/login",
   );
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setIsLoginPage(window.location.pathname === "/login");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  if (isLoginPage) {
+    return <LoginPage />;
+  }
+
+  return <MainApp />;
 }
