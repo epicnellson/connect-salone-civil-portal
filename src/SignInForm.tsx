@@ -145,14 +145,20 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
               onSuccess?.();
             }).catch((error) => {
               setSubmitting(false);
+              const msg = error.message ?? "";
               let toastTitle = "";
-              if (error.message.includes("Invalid password")) {
-                toastTitle = "Invalid password. Please try again.";
+              if (/wrong password|invalid password|invalid email/i.test(msg)) {
+                toastTitle = "Invalid email or password. Please try again.";
+              } else if (/no account|not found|doesn't exist/i.test(msg)) {
+                toastTitle = "No account found with that email. Did you mean to sign up?";
+              } else if (/already exists/i.test(msg)) {
+                toastTitle = "An account with this email already exists. Did you mean to sign in?";
+              } else if (/rate limit|too many/i.test(msg)) {
+                toastTitle = "Too many attempts. Please wait a moment and try again.";
               } else {
-                toastTitle =
-                  flow === "signIn"
-                    ? "Could not sign in, did you mean to sign up?"
-                    : "Could not sign up, did you mean to sign in?";
+                toastTitle = msg || (flow === "signIn"
+                  ? "Sign in failed. Please try again."
+                  : "Sign up failed. Please try again.");
               }
               toast.error(toastTitle);
             });
