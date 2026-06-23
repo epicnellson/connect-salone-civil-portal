@@ -14,7 +14,7 @@
     "subtitle": "Sierra Leone civic portal — browse services and officials freely. Sign in for AI chat assistance.",
     "signIn": "Sign in to use AI Assistant"
   },
-  "welcomeBack": "Welcome back, {name}!",
+  "welcomeBack": "Welcome back, {{name}}!",
   "welcomePrompt": "What do you want to do today — ask the AI, browse services, or find officials?",
   "chatGreeting": "Welcome to SaloneHub AI!",
   "chatSuggestions": "Try one of these:",

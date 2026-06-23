@@ -14,7 +14,7 @@
     "subtitle": "Salɔn sivik portal — frili luk sɛvis ɛn ofisal. Saayin fɔ yuz AI asistan.",
     "signIn": "Saayin fɔ yuz AI Asistan"
   },
-  "welcomeBack": "Wɛlkam bak, {name}!",
+  "welcomeBack": "Wɛlkam bak, {{name}}!",
   "welcomePrompt": "Wetin yu want du tide — aks AI, luk sɛvis, ɔ faynd ofisal?",
   "chatGreeting": "Wɛlkam to SaloneHub AI!",
   "chatSuggestions": "Tray wan dɛn ya:",
