@@ -102,6 +102,7 @@ function LoginPage() {
           </div>
         </div>
       </main>
+      <Toaster theme={theme} richColors closeButton />
     </div>
   );
 }
