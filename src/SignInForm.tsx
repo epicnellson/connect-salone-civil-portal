@@ -147,7 +147,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
               setSubmitting(false);
               const msg = error.message ?? "";
               let toastTitle = "";
-              if (/wrong password|invalid password|invalid email/i.test(msg)) {
+              if (/wrong password|invalid password|invalid email|invalid credentials/i.test(msg)) {
                 toastTitle = "Invalid email or password. Please try again.";
               } else if (/no account|not found|doesn't exist/i.test(msg)) {
                 toastTitle = "No account found with that email. Did you mean to sign up?";
